@@ -4,7 +4,7 @@ import StarRating from  "./StarRating";
 const KEY = "c656cdc2";
 
 export default function App() {
-  const [query, setQuery] = useState("inception");
+  const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
   const [error, setError] = useState("");
@@ -29,12 +29,16 @@ export default function App() {
   }
 
   useEffect(function() {
+
+    const controller = new AbortController();
+
     async function fetchMovies() {
       try {
         setIsLoading(true);
-        setError(); 
+        setError(""); 
         const res = await fetch(
-          `http://www.omdbapi.com/?i=tt3896198&apikey=${KEY}&s=${query}`
+          `http://www.omdbapi.com/?i=tt3896198&apikey=${KEY}&s=${query}`,
+          {signal: controller.signal}
         );
 
         if(!res.ok) 
@@ -50,10 +54,14 @@ export default function App() {
           setMovies(data.Search);
         // console.log(data.Search);
         setIsLoading(false);
+        setError(""); 
       } 
       catch(err) {
         console.error(err);
-        setError(err.message);
+        
+        if(err.name !== "AbortError") {
+          setError(err.message);
+        }
       } 
       finally {
         setIsLoading(false);
@@ -67,6 +75,10 @@ export default function App() {
     }
 
     fetchMovies();
+
+    return function() {
+      controller.abort();
+    }
   }, [query]);
 
   return (
